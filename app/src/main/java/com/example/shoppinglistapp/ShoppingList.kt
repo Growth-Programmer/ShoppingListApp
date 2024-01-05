@@ -68,13 +68,30 @@ fun ShoppingListApp() {
 
             Text("Add Item")
         }
+        // Generates list of shopping items.
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
             items(shopItems) {
-                ShoppingListItem(it, {}, {})
+                item ->
+                if(item.isEditing){
+                    ShoppingItemEditor(item = item, onEditComplete = { editedName, editedQuantity ->
+                        shopItems = shopItems.map{it.copy(isEditing = false)}
+                        val editedItem = shopItems.find{it.id == item.id}
+                        editedItem?.let{
+                            it.name = editedName
+                            it.quantity = editedQuantity
+                        }
+                    })
+                }else{
+                    ShoppingListItem(item = item, onEditClick = {
+                        shopItems = shopItems.map{it.copy(isEditing = it.id==item.id)}
+                    }, onDeleteClick =  {
+                        shopItems = shopItems - item
+                    })
+                }
             }
         }
     }
@@ -132,6 +149,7 @@ fun ShoppingListApp() {
     }
 }
 
+// If the user whats to edit their shopping list item, this UI will appear to change the original inputs.
 @Composable
 fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit) {
     var editedName by remember { mutableStateOf(item.name) }
@@ -174,6 +192,7 @@ fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit
     }
 }
 
+// The UI that is created after the user adds an item.
 @Composable
 fun ShoppingListItem(
     item: ShoppingItem,
@@ -187,7 +206,7 @@ fun ShoppingListItem(
             .border(
                 border = BorderStroke(2.dp, Color.Black),
                 shape = RoundedCornerShape(20)
-            )
+            ), horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = item.name, modifier = Modifier.padding(8.dp))
         Text(text = "Qty: ${item.quantity}", modifier = Modifier.padding(8.dp))
@@ -196,7 +215,7 @@ fun ShoppingListItem(
                 Icon(imageVector = Icons.Default.Edit, contentDescription = null)
             }
 
-            IconButton(onDeleteClick) {
+            IconButton(onClick = onDeleteClick) {
                 Icon(imageVector = Icons.Default.Delete, contentDescription = null)
             }
         }
